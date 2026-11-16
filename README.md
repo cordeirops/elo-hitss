@@ -3,13 +3,17 @@
 Protótipo da ideia inscrita no Prêmio Nosso Sol (categoria "Ideia que Melhora a Experiência do Cliente").
 
 - `backend/`: Quarkus 3 (Java 17+), API REST, dados em memória, login por perfil.
-- `frontend/`: Vue 3 + Vite. O build já está em `backend/src/main/resources/META-INF/resources`.
-- `docs/`: Ficha Técnica (docx e pdf) e prints das telas.
+- `frontend/`: Vue 3 + Vite. O build é gerado em `backend/src/main/resources/META-INF/resources` (pasta ignorada pelo git) e o Quarkus serve em `/`.
+
+**Aplicação no ar (demo):** [elo-hitss-backend.vercel.app](https://elo-hitss-backend.vercel.app)
+
+Os logins de demonstração estão na seção [Acessos de demonstração](#acessos-de-demonstração-dados-fictícios). A API responde no mesmo endereço, em `/api` (ex.: `/api/auth/me` devolve 401 sem login).
 
 ## Rodar (um comando)
 
 ```
-cd backend
+cd frontend && npm install && npm run build   # gera o front dentro do backend
+cd ../backend
 mvn quarkus:dev
 ```
 
@@ -43,18 +47,3 @@ Os dados reiniciam a cada start. Os feedbacks de demonstração são gerados em 
 ## O que muda para produção
 
 Login via SSO corporativo (OIDC) em vez de senha local, PostgreSQL com Hibernate Panache no lugar do armazenamento em memória, auditoria de acesso, política de retenção e revisão de LGPD com o DPO.
-
-## Status de verificação
-
-O Maven Central estava bloqueado no ambiente onde o protótipo foi escrito, então o `mvn` não rodou lá. O Java foi compilado contra stubs do jakarta, a lógica foi testada e os resources reais foram exercitados com o front por um mini-servidor de teste. O frontend foi buildado e testado no navegador. Se o `mvn quarkus:dev` reclamar de algo, é o primeiro lugar para olhar (versão do Quarkus em `pom.xml`: 3.15.1).
-
-## Deploy na Vercel (dois projetos)
-
-A Vercel roda o front normalmente e o backend Quarkus pelo Container Runtime (beta), usando `backend/Dockerfile`.
-
-1. Backend: novo projeto na Vercel, Root Directory `backend` (preset Container). Em Settings > Environment Variables defina `PORT=8080` (o padrao da Vercel e 80). Anote a URL de producao.
-2. Front: novo projeto, Root Directory `frontend` (preset Vite).
-3. No projeto do front, em Settings > Environment Variables, defina `VITE_API_URL` com a URL do backend (ex: `https://elo-hitss-9uqv.vercel.app`, sem barra no final) e faca um redeploy, pois a variavel entra no build.
-4. No projeto do backend, defina `CORS_ORIGINS` com a URL do front (ex: `https://SEU-FRONT.vercel.app`) e faca redeploy. Sem a variavel o CORS fica aberto (`*`), ok so para demo.
-
-Atencao: os dados ficam em memoria. A instancia escala a zero apos 5 minutos sem trafego em producao, e cada reinicio volta ao seed de demonstracao e derruba as sessoes. Se `/api` responder uma pagina de login da Vercel, revise o Deployment Protection do projeto do backend.

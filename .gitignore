@@ -4,3 +4,5 @@ backend/target/
 backend/src/main/resources/META-INF/resources/
 .vercel/
 .env*
+.idea/
+docs/
