@@ -1,0 +1,1 @@
+import{f as o,s as n}from"./utils-BvdDR3x5.js";import{o as r,c,t as a,i as l,q as u,k as f}from"./index-6aQ-pC-T.js";const v={__name:"ScoreBadge",props:{value:{type:Number,default:null},suffix:{type:String,default:""}},setup(e){const s=e,t=f(()=>n(s.value));return(i,m)=>(r(),c("span",{class:u(["chip",t.value])},a(l(o)(e.value,1))+a(e.suffix),3))}};export{v as _};
