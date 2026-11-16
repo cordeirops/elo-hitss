@@ -12,7 +12,8 @@ export default defineConfig({
     proxy: { '/api': 'http://localhost:8080' }
   },
   build: {
-    outDir: '../backend/src/main/resources/META-INF/resources',
+    // Na Vercel (variavel VERCEL=1) o build sai em dist/; localmente vai para dentro do backend.
+    outDir: process.env.VERCEL ? 'dist' : '../backend/src/main/resources/META-INF/resources',
     emptyOutDir: true
   }
 })

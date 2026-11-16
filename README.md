@@ -47,3 +47,13 @@ Login via SSO corporativo (OIDC) em vez de senha local, PostgreSQL com Hibernate
 ## Status de verificação
 
 O Maven Central estava bloqueado no ambiente onde o protótipo foi escrito, então o `mvn` não rodou lá. O Java foi compilado contra stubs do jakarta, a lógica foi testada e os resources reais foram exercitados com o front por um mini-servidor de teste. O frontend foi buildado e testado no navegador. Se o `mvn quarkus:dev` reclamar de algo, é o primeiro lugar para olhar (versão do Quarkus em `pom.xml`: 3.15.1).
+
+## Deploy na Vercel (dois projetos)
+
+A Vercel roda o front normalmente e o backend Quarkus pelo Container Runtime (beta), usando `backend/Dockerfile`.
+
+1. Backend: novo projeto na Vercel, Root Directory `backend` (preset Container). Em Settings > Environment Variables defina `PORT=8080` (o padrao da Vercel e 80). Anote a URL de producao.
+2. Front: novo projeto, Root Directory `frontend` (preset Vite).
+3. Em `frontend/vercel.json`, troque `SEU-BACKEND.vercel.app` pela URL do passo 1 e faca o commit. O front chama `/api/...` e a Vercel repassa ao backend, sem CORS.
+
+Atencao: os dados ficam em memoria. A instancia escala a zero apos 5 minutos sem trafego em producao, e cada reinicio volta ao seed de demonstracao e derruba as sessoes. Se `/api` responder uma pagina de login da Vercel, revise o Deployment Protection do projeto do backend.
