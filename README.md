@@ -54,6 +54,7 @@ A Vercel roda o front normalmente e o backend Quarkus pelo Container Runtime (be
 
 1. Backend: novo projeto na Vercel, Root Directory `backend` (preset Container). Em Settings > Environment Variables defina `PORT=8080` (o padrao da Vercel e 80). Anote a URL de producao.
 2. Front: novo projeto, Root Directory `frontend` (preset Vite).
-3. Em `frontend/vercel.json`, troque `SEU-BACKEND.vercel.app` pela URL do passo 1 e faca o commit. O front chama `/api/...` e a Vercel repassa ao backend, sem CORS.
+3. No projeto do front, em Settings > Environment Variables, defina `VITE_API_URL` com a URL do backend (ex: `https://elo-hitss-9uqv.vercel.app`, sem barra no final) e faca um redeploy, pois a variavel entra no build.
+4. No projeto do backend, defina `CORS_ORIGINS` com a URL do front (ex: `https://SEU-FRONT.vercel.app`) e faca redeploy. Sem a variavel o CORS fica aberto (`*`), ok so para demo.
 
 Atencao: os dados ficam em memoria. A instancia escala a zero apos 5 minutos sem trafego em producao, e cada reinicio volta ao seed de demonstracao e derruba as sessoes. Se `/api` responder uma pagina de login da Vercel, revise o Deployment Protection do projeto do backend.

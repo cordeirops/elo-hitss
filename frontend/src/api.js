@@ -1,6 +1,10 @@
 import { auth } from './auth'
 import router from './router'
 
+// Em producao na Vercel, defina VITE_API_URL (ex: https://elo-hitss-9uqv.vercel.app).
+// Vazio = mesma origem (Quarkus servindo o front, ou proxy do Vite em dev).
+const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message)
@@ -14,7 +18,7 @@ export async function api(path, { method = 'GET', body } = {}) {
 
   let res
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${BASE}/api${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body)

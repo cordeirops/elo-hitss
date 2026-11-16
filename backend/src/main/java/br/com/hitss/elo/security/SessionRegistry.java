@@ -3,32 +3,32 @@ package br.com.hitss.elo.security;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.security.SecureRandom;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
-/** Sessoes (token opaco -> usuário) mantidas em memória. */
+/**
+ * Tokens de sessão assinados (HMAC-SHA256), no formato {@code userId.expiraEmEpochSegundos.assinatura}.
+ * Não guardam estado no servidor, então qualquer instância do backend valida o token de outra
+ * (necessário quando a plataforma sobe mais de uma instância). Defina ELO_SESSION_SECRET em produção.
+ */
 @ApplicationScoped
 public class SessionRegistry {
-
-    private record Session(long userId, Instant expiresAt) {
-    }
-
-    private static final SecureRandom RANDOM = new SecureRandom();
-    private final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     @ConfigProperty(name = "elo.session.hours", defaultValue = "8")
     long sessionHours;
 
+    @ConfigProperty(name = "elo.session.secret", defaultValue = "elo-demo-secret-troque-em-producao")
+    String secret;
+
     public String open(long userId) {
-        byte[] bytes = new byte[32];
-        RANDOM.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        sessions.put(token, new Session(userId, Instant.now().plus(Duration.ofHours(sessionHours))));
-        return token;
+        long exp = Instant.now().plus(Duration.ofHours(sessionHours)).getEpochSecond();
+        String payload = userId + "." + exp;
+        return payload + "." + sign(payload);
     }
 
     /** Retorna o id do usuário dono do token, ou null se inválido/expirado. */
@@ -36,20 +36,37 @@ public class SessionRegistry {
         if (token == null) {
             return null;
         }
-        Session s = sessions.get(token);
-        if (s == null) {
+        String[] parts = token.split("\\.");
+        if (parts.length != 3) {
             return null;
         }
-        if (s.expiresAt().isBefore(Instant.now())) {
-            sessions.remove(token);
+        String payload = parts[0] + "." + parts[1];
+        byte[] expected = sign(payload).getBytes(StandardCharsets.UTF_8);
+        if (!MessageDigest.isEqual(expected, parts[2].getBytes(StandardCharsets.UTF_8))) {
             return null;
         }
-        return s.userId();
+        try {
+            long exp = Long.parseLong(parts[1]);
+            if (exp < Instant.now().getEpochSecond()) {
+                return null;
+            }
+            return Long.parseLong(parts[0]);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
+    /** Token sem estado: o logout é feito descartando o token no navegador. */
     public void close(String token) {
-        if (token != null) {
-            sessions.remove(token);
+    }
+
+    private String sign(String payload) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         }
     }
 }
